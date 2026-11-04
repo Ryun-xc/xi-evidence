@@ -1,3 +1,4 @@
+/** Small Ed25519 key store. The private key never leaves the data directory. */
 ﻿import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -1,3 +1,4 @@
+/** Local HTTP sidecar for the evidence service. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -27,6 +28,7 @@ export function createSidecar({ dataDir = path.resolve('data'), token = null, ho
       res.end(html);
       return;
     }
+    // The health endpoint is public; everything else requires a bearer token.
     if (!authorized(req, accessToken)) return send(res, 401, { ok: false, error: 'authentication required' });
     try {
       if (url.pathname === '/v1/proposals' && method === 'GET') return send(res, 200, { ok: true, items: service.listProposals({ state: url.searchParams.get('state') }) });

@@ -1,3 +1,4 @@
+/** Optional independent Ed25519 signature on an approval decision. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';

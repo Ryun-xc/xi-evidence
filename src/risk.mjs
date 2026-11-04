@@ -1,3 +1,4 @@
+/** Deterministic first-pass risk policy. The model may advise; this policy decides. */
 const READONLY = new Set(['timeline.read', 'memory.query', 'goal.list', 'task.list', 'eval.read', 'knowledge.search', 'evidence.read']);
 const HIGH = new Set(['shell.exec', 'device.control', 'http.post', 'git.push', 'deploy.release', 'file.delete', 'env.write']);
 

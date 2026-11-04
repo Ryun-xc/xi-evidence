@@ -1,3 +1,4 @@
+/** Deterministic JSON used for hashing and signatures. */
 ﻿import crypto from 'node:crypto';
 
 export function canonical(value) {

@@ -1,3 +1,4 @@
+/** Transaction service: proposal, decision, permit, execution, recovery, export. */
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { canonical, sha256 } from './canonical.mjs';
@@ -44,6 +45,7 @@ export function createEvidenceService({ dataDir = path.resolve('data'), ledger =
     return get(tx);
   }
 
+  // A permit is signed by the same ledger key but scoped to one transaction.
   function issuePermit(tx, { expiresAt = null } = {}) {
     const current = get(tx);
     if (!current) throw new Error('transaction not found');
@@ -61,6 +63,7 @@ export function createEvidenceService({ dataDir = path.resolve('data'), ledger =
     return permit;
   }
 
+  // Persist the start marker before invoking any external executor.
   function beginExecution(tx, { permit = null } = {}) {
     const current = get(tx);
     if (!current) throw new Error('transaction not found');
@@ -112,6 +115,7 @@ export function createEvidenceService({ dataDir = path.resolve('data'), ledger =
     }
   }
 
+  // A started execution without a terminal record is ambiguous after restart.
   function recover() {
     for (const tx of transactions()) {
       if (tx.state === 'executing') {
