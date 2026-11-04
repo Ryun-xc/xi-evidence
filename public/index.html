@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>XI Evidence · Approval Console</title>
+  <style>
+    :root { color-scheme: dark; --bg:#060b10; --card:#0d1720; --line:#1e3442; --text:#dceaf2; --muted:#7e9aaa; --cyan:#50d8e8; --red:#ff6b6b; --green:#69e0a0; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:14px/1.5 ui-monospace,Consolas,monospace; }
+    main { max-width: 1000px; margin: 0 auto; padding: 32px 18px 60px; }
+    h1 { font-size: 20px; letter-spacing:.08em; color:var(--cyan); }
+    .bar { display:flex; gap:8px; align-items:center; margin:18px 0; flex-wrap:wrap; }
+    input { flex:1; min-width:220px; background:#08131b; border:1px solid var(--line); color:var(--text); padding:9px 10px; border-radius:8px; }
+    button { background:transparent; border:1px solid var(--line); color:var(--text); padding:9px 12px; border-radius:8px; cursor:pointer; }
+    button:hover { border-color:var(--cyan); color:var(--cyan); }
+    button.ok { border-color:#2d7a58; color:var(--green); }
+    button.no { border-color:#7a3535; color:var(--red); }
+    .card { border:1px solid var(--line); background:var(--card); border-radius:12px; padding:14px; margin:12px 0; }
+    .row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .tag { color:var(--muted); font-size:12px; }
+    pre { background:#050c12; border:1px solid var(--line); padding:10px; overflow:auto; max-height:300px; font-size:12px; }
+    .muted { color:var(--muted); }
+    .error { color:var(--red); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>XI EVIDENCE / APPROVAL CONSOLE</h1>
+  <div class="muted">本机审批台。每一条执行都必须先获得批准，并签入证据链。</div>
+  <div class="bar">
+    <input id="token" type="password" placeholder="access token">
+    <button id="save">保存</button>
+    <button id="refresh">刷新</button>
+  </div>
+  <div id="status" class="muted">未连接</div>
+  <div id="list"></div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let token = localStorage.getItem('xi-evidence-token') || '';
+  $('token').value = token;
+  $('save').onclick = () => { token = $('token').value.trim(); localStorage.setItem('xi-evidence-token', token); load(); };
+  $('refresh').onclick = load;
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  async function api(pathname, options = {}) {
+    const res = await fetch(pathname, { ...options, headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', ...(options.headers || {}) } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+  async function act(pathname) {
+    try { await api(pathname, { method: 'POST', body: '{}' }); await load(); } catch (error) { alert(error.message); }
+  }
+  async function load() {
+    try {
+      const data = await api('/v1/proposals');
+      const items = data.items || [];
+      $('status').textContent = `已连接 · ${items.length} 个事务`;
+      $('list').innerHTML = items.slice().reverse().map((tx) => `
+        <article class="card">
+          <div class="row"><b>${esc(tx.transactionId)}</b><span class="tag">${esc(tx.state)} · ${esc(tx.risk?.level || '')}</span></div>
+          <div class="muted">${esc(tx.proposal?.intent || '(no intent)')}</div>
+          <pre>${esc(JSON.stringify({ risk: tx.risk, args: tx.proposal?.args, decision: tx.decision, execution: tx.execution }, null, 2))}</pre>
+          <div class="row">
+            <span class="tag">${esc(tx.proposal?.tool || '')}</span>
+            <span>
+              ${tx.state === 'awaiting_approval' ? `<button class="ok" data-approve="${esc(tx.transactionId)}">批准</button> <button class="no" data-reject="${esc(tx.transactionId)}">拒绝</button>` : ''}
+              ${tx.state === 'approved' ? `<button data-execute="${esc(tx.transactionId)}">执行</button>` : ''}
+            </span>
+          </div>
+        </article>`).join('') || '<div class="card muted">没有事务。</div>';
+      for (const b of document.querySelectorAll('[data-approve]')) b.onclick = () => act(`/v1/transactions/${encodeURIComponent(b.dataset.approve)}/approve`);
+      for (const b of document.querySelectorAll('[data-reject]')) b.onclick = () => act(`/v1/transactions/${encodeURIComponent(b.dataset.reject)}/reject`);
+      for (const b of document.querySelectorAll('[data-execute]')) b.onclick = () => act(`/v1/transactions/${encodeURIComponent(b.dataset.execute)}/execute`);
+    } catch (error) {
+      $('status').innerHTML = `<span class="error">${esc(error.message)}</span>`;
+    }
+  }
+  if (token) load();
+</script>
+</body>
+</html>

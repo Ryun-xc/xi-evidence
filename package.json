@@ -1,0 +1,23 @@
+{
+  "name": "xi-evidence",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first verifiable governance evidence layer for AI tool calls.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node test/run.mjs",
+    "demo": "node demo.mjs",
+    "verify": "node verify.mjs",
+    "server": "node src/server.mjs",
+    "mcp": "node src/mcp-server.mjs",
+    "anchor": "node bin/anchor.mjs"
+  },
+  "author": "Runcheng Zhou",
+  "bin": {
+    "xi-evidence": "bin/evidence.mjs"
+  }
+}

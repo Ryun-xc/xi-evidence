@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xi-evidence.local/schema/evidence-record-v1.json",
+  "title": "XI Evidence record v1",
+  "type": "object",
+  "required": ["schemaVersion", "recordId", "sequence", "previousHash", "createdAt", "kind", "transactionId", "actor", "data", "hash", "signature"],
+  "properties": {
+    "schemaVersion": { "const": "1" },
+    "recordId": { "type": "string", "pattern": "^rec_" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "previousHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "kind": { "type": "string", "enum": ["proposal", "decision", "permit.issued", "execution.started", "execution.completed", "execution.failed", "execution.ambiguous"] },
+    "transactionId": { "type": "string", "pattern": "^tx_" },
+    "actor": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": { "id": { "type": "string" }, "type": { "type": "string" } }
+    },
+    "data": { "type": "object" },
+    "hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signature": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
