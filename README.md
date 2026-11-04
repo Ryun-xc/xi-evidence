@@ -1,6 +1,8 @@
 # XI Evidence
 
-Local-first verifiable governance evidence layer for AI tool calls.
+本地优先、可独立验证的 AI 治理证据层。
+
+[English](README.en.md)
 
 ```text
 Status: developer preview (v0.1.0)
@@ -8,198 +10,228 @@ Not production-ready. Not audited. No live host integration claimed.
 ```
 
 ```text
-AI host proposes a tool call
-→ XI Evidence classifies risk
-→ human approves or rejects
-→ host executes under a short-lived permit
-→ result is recorded
-→ append-only signed evidence
-→ offline verifier
+AI 宿主提出工具调用
+→ XI Evidence 做风险分级
+→ 人批准或拒绝
+→ 宿主凭短时 permit 执行
+→ 记录结果
+→ 追加式签名账本
+→ 导出
+→ 离线验证
 ```
 
-This is not a general agent runtime. It is a small sidecar for one job:
+它不是通用 Agent 运行时。
+
+它只解决一件事：
 
 ```text
-prove who approved what, when, and whether the exported record was modified.
-```
-
----
-
-## What problem it solves
-
-AI coding agents can run commands, edit files, and deploy software.
-
-A normal log answers:
-
-```text
-something happened
-```
-
-XI Evidence answers:
-
-```text
-who proposed it
-what risk was identified
-who approved or rejected it
-what execution was permitted
-what result hash was recorded
-whether the exported chain is intact
+证明谁在何时批准了什么，
+以及导出的记录有没有被修改。
 ```
 
 ---
 
-## Scope
+## 为什么做这个项目
 
-### First vertical
+AI 编码 Agent 已经可以：
 
 ```text
-AI coding agent production-change approval
+执行命令
+修改文件
+部署服务
+修改环境变量
 ```
 
-### First host
+普通日志只能说明“发生了一件事”。
+
+XI Evidence 要回答：
 
 ```text
-DeepSeek Harness (reference adapter contract)
-```
-
-OpenClaw is a later adapter, not a first-phase commitment.
-
-### Not included
-
-```text
-general agent runtime
-QQ / WeChat / DingTalk channel adapter
-browser automation
-plugin marketplace
-model marketplace
-multi-tenant SaaS
-shell execution in the evidence process
+谁提出的
+风险是什么
+谁批准的
+执行许可是什么
+执行结果是什么
+导出后有没有被改过
 ```
 
 ---
 
-## Architecture
+## 当前范围
+
+### 第一个垂直场景
 
 ```text
-Host / MCP client
-      │
-      ▼
-XI Evidence HTTP sidecar
+AI 编码 Agent 的生产变更审批
+```
+
+### 第一个宿主
+
+```text
+DeepSeek Harness（参考适配器）
+```
+
+OpenClaw 只提供接口适配器，不做第一阶段承诺。
+
+### 不包含
+
+```text
+通用 Agent 运行时
+QQ / 微信 / 钉钉渠道
+浏览器自动化
+插件市场
+模型市场
+多租户 SaaS
+证据进程内 shell 执行
+```
+
+---
+
+## 架构
+
+```text
+Host / MCP / Agent
+        │
+        ▼
+XI Evidence Sidecar
   ├─ proposal API
   ├─ risk policy
   ├─ approval state machine
-  ├─ execution permit
-  ├─ workspace executor (demo)
-  ├─ append-only ledger
-  ├─ Ed25519 signatures
+  ├─ signed permit
+  ├─ workspace executor
+  ├─ append-only signed ledger
+  ├─ Git anchor
   ├─ export
-  └─ MCP adapter
-
-      │
-      ▼
-export/
-  records.jsonl
-  manifest.json
-  public-key.pem
-  verify.mjs
-  README.txt
+  └─ offline verifier
 ```
 
-The ledger is the WAL. A record is appended and fsynced before a state transition. A crash between `execution.started` and `execution.completed` becomes `ambiguous`, never silently retried.
+导出包：
+
+```text
+records.jsonl
+manifest.json
+public-key.pem
+verify.mjs
+README.txt
+```
+
+账本本身就是 WAL。
+
+状态改变前先追加并 fsync 记录。
+
+如果出现：
+
+```text
+execution.started
+但没有 completed
+```
+
+重启后标记：
+
+```text
+ambiguous
+```
+
+不会自动重跑。
 
 ---
 
-## Trust model
+## 信任模型
 
-The verifier trusts:
-
-```text
-the Ed25519 public key fingerprint distributed out of band
-```
-
-The verifier does not trust:
+验证方信任：
 
 ```text
-the xi-evidence process
-the host
-the database
-the network
+带外分发的 Ed25519 公钥指纹
 ```
 
-The verifier can prove:
+验证方不需要信任：
 
 ```text
-records are internally consistent
-records were signed by the matching key
-the manifest and records were not modified after signing
+XI Evidence 进程
+宿主
+数据库
+网络
 ```
 
-The verifier cannot prove, without an external anchor:
+可以证明：
 
 ```text
-the signer was honest at capture time
-an earlier valid export was not substituted
-the host reported the truth
+记录内部一致
+记录由匹配私钥签名
+manifest 和记录在导出后未被修改
 ```
 
-See [THREAT-MODEL.md](THREAT-MODEL.md).
+不能单独证明：
+
+```text
+签名者在记录时一定诚实
+宿主一定报告了真实结果
+没有被替换成一份更早的合法导出
+```
+
+最后一项需要：
+
+```text
+Git 锚定
+时间戳
+透明日志
+TPM / 硬件根
+```
 
 ---
 
-## Quick start
+## 快速开始
 
-Requires Node.js 20+.
+需要 Node.js 20+。
 
 ```bash
 npm test
 npm run demo
-npm run anchor
 ```
 
-The demo creates:
+Demo 会生成：
 
 ```text
-data/demo/export/       valid export
-data/demo/tampered/     modified export that must fail verification
+data/demo/export/       合法导出
+data/demo/tampered/     被修改的导出，必须验证失败
 ```
 
-Run the offline verifier:
+离线验证：
 
 ```bash
 cd data/demo/export
 node verify.mjs
 ```
 
-Start the sidecar:
+独立 Python 验证器：
+
+```bash
+python sdk/python/verify.py data/demo/export
+```
+
+启动侧车：
 
 ```bash
 XI_EVIDENCE_DATA=./data node src/server.mjs
 ```
 
-Approval console:
+审批台：
 
 ```text
 http://127.0.0.1:8790/
 ```
 
-Paste the token from `data/token`. The console shows proposal, risk, decision, and execution context.
-
-CLI:
-
-```bash
-node bin/evidence.mjs list
-node bin/evidence.mjs status <transactionId>
-node bin/evidence.mjs approve <transactionId> --approver alice
-node bin/evidence.mjs execute <transactionId>
-```
-
-Token:
+Token：
 
 ```text
 data/token
 ```
 
-Bind defaults to `127.0.0.1`. Do not expose it publicly.
+默认只监听：
+
+```text
+127.0.0.1
+```
 
 ---
 
@@ -218,16 +250,29 @@ GET  /v1/records
 POST /v1/export
 ```
 
-All routes except `/v1/health` require:
+除 `/v1/health` 外都需要：
 
 ```text
 Authorization: Bearer <token>
 ```
 
-or:
+或：
 
 ```text
 x-evidence-token: <token>
+```
+
+---
+
+## CLI
+
+```bash
+node bin/evidence.mjs list
+node bin/evidence.mjs status <transactionId>
+node bin/evidence.mjs approve <transactionId> --approver alice
+node bin/evidence.mjs reject <transactionId> --approver alice
+node bin/evidence.mjs execute <transactionId>
+node bin/evidence.mjs export
 ```
 
 ---
@@ -240,7 +285,7 @@ XI_EVIDENCE_TOKEN=<token> \
 npm run mcp
 ```
 
-Tools:
+工具：
 
 ```text
 evidence_propose
@@ -251,25 +296,25 @@ evidence_permit
 evidence_execute
 ```
 
-The MCP process is a client of the sidecar. It does not bypass approval.
+MCP 只是侧车客户端，不绕过审批。
 
 ---
 
-## Risk policy
+## 风险策略
 
 ```text
-read-only tools       → allow
-workspace.write       → require approval
-shell.exec / deploy   → require approval or deny
-device.control        → deny
-unknown tools         → high risk
+只读工具        → allow
+workspace.write → require_approval
+shell.exec      → high / approval
+device.control  → deny
+未知工具        → high
 ```
 
-The model may suggest risk, but the deterministic policy and the human decide.
+模型可以建议风险，但最终由确定性策略和审批人决定。
 
 ---
 
-## State machine
+## 状态机
 
 ```text
 proposed
@@ -279,22 +324,28 @@ proposed
 → completed / failed / rejected / ambiguous
 ```
 
-Rules:
+规则：
 
 ```text
-no execution without approved
-no execution without a permit
-started without completed after restart → ambiguous
-no blind retry
+没有批准不执行
+没有 permit 不执行
+重启后 started 没有 completed → ambiguous
+不盲目重试
 ```
 
 ---
 
-## Evidence format
+## 证据格式
 
-See [SCHEMA.md](SCHEMA.md).
+见：
 
-Each record:
+```text
+SPEC.md
+SCHEMA.md
+evidence.schema.json
+```
+
+每条记录：
 
 ```text
 schemaVersion
@@ -310,49 +361,71 @@ hash
 signature
 ```
 
-Export package:
+---
+
+## 审批人身份
+
+默认审批人只是标签：
+
+```json
+{ "id": "alice", "type": "human" }
+```
+
+这还不是密码学身份。
+
+可选审批人签名支持：
 
 ```text
-records.jsonl
-manifest.json
-public-key.pem
-verify.mjs
-README.txt
+Ed25519
+contextHash
+独立 approverPublicKey
+独立 approverSignature
+```
+
+见 `IDENTITY.md`。
+
+还没有：
+
+```text
+WebAuthn
+SSO
+撤销
+密钥轮换 UI
 ```
 
 ---
 
-## SDK
-
-Node client:
-
-```js
-import { EvidenceClient } from './sdk/node.mjs';
-const client = new EvidenceClient({ baseUrl: 'http://127.0.0.1:8790', token: process.env.XI_EVIDENCE_TOKEN });
-```
-
-Independent Python verifier:
+## Git 锚定
 
 ```bash
-python sdk/python/verify.py data/demo/export
+node bin/anchor.mjs anchor --export data/demo/export --repo data/anchor
+node bin/anchor.mjs verify --export data/demo/export --repo data/anchor
 ```
 
-## Tests
+纯本地锚点仍然只是本地信任点；更强的方式是推到远程仓库或使用时间戳/透明日志。
+
+---
+
+## 测试
 
 ```text
 canonical JSON
-ledger chain and signatures
+ledger chain + signatures
 risk policy
-approval/execute flow
+approval / execute
 crash recovery → ambiguous
 tamper detection
 HTTP sidecar
+Node SDK
 host adapter
+DSH / OpenClaw interface
 offline verifier CLI
-MCP adapter
+Git anchor
+approver signature
+CLI
+independent Python verifier
+MCP
 ```
-
-Run:
 
 ```bash
 npm test
@@ -360,54 +433,62 @@ npm test
 
 ---
 
-## Current status
+## 当前完成度
 
 ```text
-Gate A  trust model / schema       completed locally
-Gate B  signed ledger / verifier   completed locally
-Gate C  WAL / risk / permit / UI   completed locally
-Gate D  HTTP + reference adapters  completed locally
-Gate E  external audit / pilots    not attempted
+Gate A  信任模型 / Schema          完成
+Gate B  签名账本 / 离线验证        完成
+Gate C  WAL / 风险 / permit / UI   完成
+Gate D  HTTP / SDK / MCP / 参考适配 完成到参考实现
+Gate E  本地网络 / TLS / 干净目录   完成
 ```
 
-External gates are not faked:
+外部验收未完成：
 
 ```text
-no third-party security audit
-no real pilot user
-no live DSH host integration verified
-no TPM / hardware root
-no public deployment
+真实 DSH hook
+真实 OpenClaw 接入
+第三方安全审计
+真实用户试点
+第二维护者
+远程透明日志 / TPM
+WebAuthn / SSO
+干净 Windows VM
 ```
 
-The DSH adapter is a reference contract. A live host integration requires the host's actual pre-tool hook API and a separate acceptance run.
-
----
-
-## What this is not
+见：
 
 ```text
-not production-ready
-not compliance-certified
-not tamper-proof without an external anchor
-not a replacement for the host's own sandbox
-not a general-purpose agent platform
+EXTERNAL-GATES.md
+STATUS.md
 ```
 
 ---
 
-## Documents
+## 这不是什么
 
 ```text
-THREAT-MODEL.md
+不是生产级
+不是合规认证
+没有外部锚点时不是不可篡改
+不替代宿主自己的沙箱
+不是通用 Agent 平台
+```
+
+---
+
+## 文档
+
+```text
+SPEC.md
 SCHEMA.md
+evidence.schema.json
+THREAT-MODEL.md
 SECURITY.md
 HOST-ADAPTER.md
 DEMO.md
 ANCHOR.md
 IDENTITY.md
-SPEC.md
-evidence.schema.json
 AUDIT.md
 PILOT.md
 STATUS.md
