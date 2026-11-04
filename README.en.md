@@ -5,7 +5,7 @@
 Local-first verifiable governance evidence layer for AI tool calls.
 
 ```text
-Status: developer preview (v0.1.0)
+Status: developer preview (v0.2.0)
 Not production-ready. Not audited. No live host integration claimed.
 ```
 
@@ -234,27 +234,62 @@ x-evidence-token: <token>
 
 ---
 
-## MCP
+## MCP (Cursor single-point)
+
+No separate sidecar, URL, or token:
 
 ```bash
-XI_EVIDENCE_URL=http://127.0.0.1:8790 \
-XI_EVIDENCE_TOKEN=<token> \
-npm run mcp
+npx -y xi-evidence-mcp
 ```
 
-Tools:
+Cursor config:
+
+```json
+{
+  "mcpServers": {
+    "xi-evidence": {
+      "command": "npx",
+      "args": ["-y", "xi-evidence-mcp"]
+    }
+  }
+}
+```
+
+The model only sees:
 
 ```text
-evidence_propose
-evidence_status
-evidence_approve
-evidence_reject
-evidence_permit
-evidence_execute
+xi_guard
+xi_status
+xi_export
+xi_verify
 ```
 
-The MCP process is a client of the sidecar. It does not bypass approval.
+There is no approve, reject, or execute tool.
 
+Human approval:
+
+```bash
+npx xi-evidence-mcp list
+npx xi-evidence-mcp status <id>
+npx xi-evidence-mcp approve <id>
+npx xi-evidence-mcp reject <id>
+npx xi-evidence-mcp export
+npx xi-evidence-mcp verify <dir>
+```
+
+`xi_guard` classifies risk and creates an evidence transaction. It never approves or executes.
+
+### Important limit
+
+MCP is not a host hook.
+
+It cannot automatically intercept Cursor's native shell.
+
+Only an explicit `xi_guard` call, or execution through controlled tools, provides approval protection.
+
+If the model can run arbitrary shell commands, it can also invoke the `approve` CLI. A real approval boundary must live outside the model shell.
+
+See [MCP.md](MCP.md).
 ---
 
 ## Risk policy

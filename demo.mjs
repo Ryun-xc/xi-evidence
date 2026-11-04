@@ -15,7 +15,7 @@ const approved = service.propose({ tool: 'workspace.write', args: { name: 'appro
 service.approve(approved.transactionId, { approver, note: 'looks good' });
 const completed = await service.execute(approved.transactionId);
 
-const rejected = service.propose({ tool: 'shell.exec', args: { command: 'rm -rf /' }, intent: 'demonstrate rejection', actor });
+const rejected = service.propose({ tool: 'shell.exec', args: { command: 'rm -rf build' }, intent: 'demonstrate rejection', actor });
 const rejectedClosed = service.reject(rejected.transactionId, { approver, note: 'irreversible and too broad' });
 
 const crashed = service.propose({ tool: 'workspace.write', args: { name: 'crash.md', content: 'unknown' }, intent: 'demonstrate crash recovery', actor });

@@ -5,7 +5,7 @@
 [English](README.en.md)
 
 ```text
-Status: developer preview (v0.1.0)
+Status: developer preview (v0.2.0)
 Not production-ready. Not audited. No live host integration claimed.
 ```
 
@@ -277,26 +277,73 @@ node bin/evidence.mjs export
 
 ---
 
-## MCP
+## MCP（Cursor 单点）
+
+不需要先启动 sidecar，不需要 URL，不需要 token：
 
 ```bash
-XI_EVIDENCE_URL=http://127.0.0.1:8790 \
-XI_EVIDENCE_TOKEN=<token> \
-npm run mcp
+npx -y xi-evidence-mcp
 ```
 
-工具：
+Cursor MCP 配置：
+
+```json
+{
+  "mcpServers": {
+    "xi-evidence": {
+      "command": "npx",
+      "args": ["-y", "xi-evidence-mcp"]
+    }
+  }
+}
+```
+
+模型只能看到四个工具：
 
 ```text
-evidence_propose
-evidence_status
-evidence_approve
-evidence_reject
-evidence_permit
-evidence_execute
+xi_guard
+xi_status
+xi_export
+xi_verify
 ```
 
-MCP 只是侧车客户端，不绕过审批。
+没有 approve / reject / execute。
+
+人工审批：
+
+```bash
+npx xi-evidence-mcp list
+npx xi-evidence-mcp status <id>
+npx xi-evidence-mcp approve <id>
+npx xi-evidence-mcp reject <id>
+npx xi-evidence-mcp export
+npx xi-evidence-mcp verify <dir>
+```
+
+`xi_guard` 只做风险分级和创建证据事务，不执行、不批准。
+
+它返回：
+
+```text
+transactionId
+decision
+risk
+approvalCommand
+```
+
+如果风险是 `require_approval`，必须由人运行审批命令。
+
+### 重要限制
+
+MCP 不是宿主 hook。
+
+它不能自动拦截 Cursor 原生 shell。
+
+只有模型主动调用 `xi_guard`，或所有执行都经过受控工具，才有审批保护。
+
+如果模型能执行任意 shell，它也能调用 CLI 的 `approve`。真正的审批边界必须在模型 shell 之外。
+
+见 [MCP.md](MCP.md)。
 
 ---
 

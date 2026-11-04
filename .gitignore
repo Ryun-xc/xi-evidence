@@ -4,3 +4,4 @@ demo-output/
 *.log
 *.pem
 release/
+*.tgz

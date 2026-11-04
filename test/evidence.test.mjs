@@ -14,7 +14,7 @@ const dir = tempDir(); try {
   assert.ok(done.execution.result.resultHash);
   assert.ok(service.ledger.count() >= 5);
 
-  const rejected = service.propose({ tool: 'shell.exec', args: { command: 'rm -rf /' }, intent: 'danger' });
+  const rejected = service.propose({ tool: 'shell.exec', args: { command: 'rm -rf build' }, intent: 'danger' });
   const rejected2 = service.reject(rejected.transactionId, { approver: { id: 'alice', type: 'human' }, note: 'no' });
   assert.equal(rejected2.state, 'rejected');
   assert.equal(service.get(rejected.transactionId).execution.startedAt, null);

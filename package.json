@@ -1,23 +1,50 @@
 {
-  "name": "xi-evidence",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Local-first verifiable governance evidence layer for AI tool calls.",
-  "type": "module",
-  "license": "Apache-2.0",
-  "engines": {
-    "node": ">=20"
-  },
-  "scripts": {
-    "test": "node test/run.mjs",
-    "demo": "node demo.mjs",
-    "verify": "node verify.mjs",
-    "server": "node src/server.mjs",
-    "mcp": "node src/mcp-server.mjs",
-    "anchor": "node bin/anchor.mjs"
-  },
-  "author": "Runcheng Zhou",
-  "bin": {
-    "xi-evidence": "bin/evidence.mjs"
-  }
+    "name":  "xi-evidence-mcp",
+    "version":  "0.2.0",
+    "private":  false,
+    "description":  "Zero-setup MCP guard and signed evidence layer for AI coding agents.",
+    "type":  "module",
+    "license":  "Apache-2.0",
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "scripts":  {
+                    "test":  "node test/run.mjs",
+                    "demo":  "node demo.mjs",
+                    "verify":  "node verify.mjs",
+                    "server":  "node src/server.mjs",
+                    "mcp":  "node bin/xi-evidence-mcp.mjs",
+                    "anchor":  "node bin/anchor.mjs"
+                },
+    "author":  "Runcheng Zhou",
+    "bin":  {
+                "xi-evidence-mcp":  "bin/xi-evidence-mcp.mjs"
+            },
+    "files":  [
+                  "bin/xi-evidence-mcp.mjs",
+                  "src",
+                  "sdk",
+                  "verify.mjs",
+                  "README.md",
+                  "README.en.md",
+                  "LICENSE",
+                  "NOTICE",
+                  "CHANGELOG.md",
+                  "MCP.md",
+                  "SPEC.md",
+                  "SCHEMA.md"
+              ],
+    "keywords":  [
+                     "mcp",
+                     "cursor",
+                     "ai",
+                     "agent",
+                     "approval",
+                     "audit",
+                     "evidence",
+                     "security"
+                 ],
+    "publishConfig":  {
+                          "access":  "public"
+                      }
 }
